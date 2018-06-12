@@ -69,7 +69,7 @@ abstract public class BaseCommand implements HttpHandler {
 
     }
 
-    public static Map<String,String> queryToMap(String query){
+    protected static Map<String,String> queryToMap(String query){
 
         Map<String,String> result = new HashMap<>();
 
@@ -88,5 +88,18 @@ abstract public class BaseCommand implements HttpHandler {
         }
 
         return result;
+    }
+
+    protected void showRequest(ArrayList<Map<String,String>> parameters){
+
+        System.out.println(" ================== P" + this.processNumber + " =================");
+
+        for(Map<String,String> param : parameters)
+        {
+            Map.Entry<String,String> entry = param.entrySet().iterator().next();
+            System.out.println(entry.getKey() + ":"+ entry.getValue());
+        }
+
+        System.out.println(" ================================================================");
     }
 }

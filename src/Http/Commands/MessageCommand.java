@@ -28,16 +28,6 @@ public class MessageCommand extends BaseCommand {
 
             System.out.println(insertRespose);
         }
-
-        System.out.println(" ================== P" + this.processNumber + " =================");
-
-        for(Map<String,String> param : parameters)
-        {
-            Map.Entry<String,String> entry = param.entrySet().iterator().next();
-            System.out.println(entry.getKey() + ":"+ entry.getValue());
-        }
-
-        System.out.println(" ================================================================");
     }
 
 
