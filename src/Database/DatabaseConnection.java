@@ -33,6 +33,8 @@ public class DatabaseConnection implements Connectable {
     @Override
     public boolean insert(String table, String[] values) {
 
+        System.out.println(this.generateInsertStatement(table,values));
+
         try
         {
             this.statement = this.connection.createStatement();
@@ -112,7 +114,7 @@ public class DatabaseConnection implements Connectable {
                 endOfLine = "";
             }
 
-            query = query.concat("(" + Integer.toString(higherIdentifier) + "," + value + ")" + endOfLine);
+            query = query.concat("(" + Integer.toString(higherIdentifier) + ",'" + value + "')" + endOfLine);
 
             higherIdentifier++;
         }
