@@ -1,6 +1,7 @@
 package Http.Commands;
 
 import Database.SqliteConnection;
+import Http.Server;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
@@ -11,9 +12,13 @@ public class MessageCommand extends BaseCommand {
 
     private ArrayList<Map<String,String>> parameters;
 
-    public MessageCommand(String processNumber)
+    private Server serverInstance;
+
+
+    public MessageCommand(String processNumber, Server server)
     {
         super(processNumber);
+        this.serverInstance = server;
     }
 
     @Override
@@ -22,16 +27,20 @@ public class MessageCommand extends BaseCommand {
 
         if( httpExchange.getRequestMethod().equals("POST"))
         {
+            this.serverInstance.setiWantToEnterCriticalRegion(true);
+
             parameters = this.parsePostRequest((Map<String, Object>)httpExchange.getAttribute("parameters"),httpExchange.getRequestBody());
 
             boolean insertRespose = this.insert(parameters);
 
-            System.out.println(insertRespose);
+            System.out.println("Insert deu certo ? " + Boolean.toString(insertRespose));
         }
     }
 
 
     protected boolean insert(ArrayList<Map<String,String>> data) {
+
+
 
         SqliteConnection dbAdapter = new SqliteConnection(this.processNumber);
 
@@ -50,5 +59,7 @@ public class MessageCommand extends BaseCommand {
 
         return dbAdapter.insert("Messages",values);
     }
+
+
 
 }

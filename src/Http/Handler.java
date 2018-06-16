@@ -1,7 +1,9 @@
 package Http;
 
-public class Handler {
+import java.util.ArrayList;
+import java.util.Map;
 
+public class Handler {
 
     public static void main(String[] args){
 
@@ -12,10 +14,6 @@ public class Handler {
         p1HttpHandler.start();
         p2HttpHandler.start();
         p3HttpHandler.start();
-
     }
-
-
-
 
 }
