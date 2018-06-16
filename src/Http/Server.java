@@ -2,6 +2,7 @@ package Http;
 
 import Http.Commands.MessageCommand;
 import Util.Timer;
+import Util.UDP.ProcessUDPListener;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -52,7 +53,7 @@ public class Server implements Runnable {
             processesPorts = new int[]{9876,9877};
         }
 
-        Thread udpListener = new Thread(new UDPListener(this.processNumber, this));
+        Thread udpListener = new Thread(new ProcessUDPListener(this.processNumber, this));
 
         udpListener.start();
 
@@ -98,7 +99,7 @@ public class Server implements Runnable {
 
     }
 
-    private void respondUdp(DatagramPacket receivePacket, String sentence)
+    public void respondUdp(DatagramPacket receivePacket, String sentence)
     {
         try
         {
@@ -173,98 +174,6 @@ public class Server implements Runnable {
 
     private String getProcessNumber(){
         return this.processNumber;
-    }
-
-
-    static class UDPListener implements Runnable {
-
-        private byte[] receivedData;
-
-        private String processNumber;
-
-        private DatagramSocket serverSocket;
-
-        private String receivedMessage = null;
-
-        private Server serverInstance;
-
-        public UDPListener(String processNumber, Server server){
-
-            this.processNumber = processNumber;
-            this.receivedData = new byte[1024];
-            this.serverInstance = server;
-
-        }
-
-        @Override
-        public void run() {
-            try
-            {
-                this.serverSocket = new DatagramSocket(this.getUDPPort());
-
-                while (true)
-                {
-
-                    DatagramPacket receivePacket = new DatagramPacket(this.receivedData,this.receivedData.length);
-
-                    this.serverSocket.receive(receivePacket);
-
-                    receivedMessage = new String(receivePacket.getData());
-
-                    String[] args = receivedMessage.split(":");
-
-                    switch (args[0])
-                    {
-                        case "REQUEST":
-
-                            if(! this.serverInstance.doIWantToEnterCriticalRegion() && ! this.serverInstance.amIAtCriticalRegion())
-                            {
-                                this.serverInstance.respondUdp(receivePacket,"OK:" + this.processNumber);
-                            }
-
-                            else if( this.serverInstance.amIAtCriticalRegion())
-                            {
-                                this.serverInstance.getReqList().add(Map.of(receivePacket.getAddress(),receivePacket.getPort()));
-                            }
-
-                            else if( this.serverInstance.doIWantToEnterCriticalRegion())
-                            {
-                                if(this.serverInstance.getTimer().getTimestamp() > Long.parseLong(args[1]))
-                                {
-                                    this.serverInstance.respondUdp(receivePacket,"OK:" + this.processNumber);
-                                }
-                                else
-                                {
-                                    this.serverInstance.getReqList().add(Map.of(receivePacket.getAddress(),receivePacket.getPort()));
-                                }
-                            }
-
-                            break;
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        private int getUDPPort()
-        {
-            switch (this.processNumber)
-            {
-                case "1":
-                    return 9876;
-                case "2":
-                    return 9877;
-                case "3":
-                    return 9878;
-            }
-
-            return -1;
-        }
-
-
     }
 
 
