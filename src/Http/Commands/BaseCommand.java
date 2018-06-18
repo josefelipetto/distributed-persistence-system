@@ -1,14 +1,15 @@
 package Http.Commands;
 
+import Http.Server;
+import Util.UDP.UDPClient;
+import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,9 +17,12 @@ abstract public class BaseCommand implements HttpHandler {
 
     protected String processNumber;
 
-    public BaseCommand(String processNumber)
+    protected Server serverInstance;
+
+    public BaseCommand(String processNumber, Server serverInstance)
     {
         this.processNumber = processNumber;
+        this.serverInstance = serverInstance;
     }
 
     protected ArrayList<Map<String,String>> parsePostRequest(Map<String,Object> parameters, InputStream requestBody) throws IOException
@@ -101,5 +105,69 @@ abstract public class BaseCommand implements HttpHandler {
         }
 
         System.out.println(" ================================================================");
+    }
+
+    protected void respond(int httpCode, String response, HttpExchange httpExchange){
+
+        try
+        {
+            httpExchange.sendResponseHeaders(
+                    httpCode,
+                    response.length()
+            );
+
+            OutputStream outputStream = httpExchange.getResponseBody();
+
+            outputStream.write(
+                    response.getBytes()
+            );
+
+            outputStream.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+
+    protected void notifyNodes(String message, Queue<Map<String,Integer>> reqList){
+        UDPClient udpClient = new UDPClient();
+
+        for (Map<String,Integer> process : reqList)
+        {
+            udpClient.send(message ,process.get("ProcessPort"));
+        }
+
+    }
+
+    protected void update(ArrayList<Map<String,String>> data){
+
+        String message = "UPDATE:" + data.toString();
+
+        UDPClient udpClient = new UDPClient();
+
+        for( int port : this.serverInstance.getProcessesPorts())
+        {
+            udpClient.send(message,port);
+        }
+    }
+
+    protected String[] insertFy(ArrayList<Map<String,String>> data )
+    {
+        int i = 0;
+
+        String[] values = new String[data.size()];
+
+        for(Map<String,String> param : data)
+        {
+            Map.Entry<String,String> entry = param.entrySet().iterator().next();
+
+            values[i] = entry.getValue();
+
+            i++;
+        }
+
+        return values;
     }
 }

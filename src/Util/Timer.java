@@ -29,15 +29,8 @@ public class Timer{
 
         public TimeUp(Timer timer)
         {
+
             this.timerInstance = timer;
-        }
-
-        public void start(){
-            this.start = System.currentTimeMillis();
-        }
-
-        private boolean isExpired(){
-            return (System.currentTimeMillis() - this.start) > delay;
         }
 
         @Override
@@ -49,15 +42,23 @@ public class Timer{
             {
                 if(this.isExpired())
                 {
-                    System.out.println("Time expired . TS: " + Long.toString(this.timerInstance.getTimestamp()));
 
                     this.timerInstance.addTimestamp();
 
                     this.start = System.currentTimeMillis();
+
                 }
             }
+        }
 
+        private boolean isExpired(){
 
+            return (System.currentTimeMillis() - this.start) > delay;
+        }
+
+        private void start(){
+
+            this.start = System.currentTimeMillis();
         }
     }
 

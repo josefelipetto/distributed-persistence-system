@@ -5,6 +5,7 @@ import Http.Server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.ArrayList;
 import java.util.Map;
 
 
@@ -37,7 +38,10 @@ public class ProcessUDPListener implements Runnable {
 
                 serverSocket.receive(receivePacket);
 
-                String receivedMessage = new String(receivePacket.getData());
+                String receivedMessage = new String(receivePacket.getData(),0,receivePacket.getLength());
+
+
+                System.out.println("UDP Listener of process " + this.processNumber + " received a message : " + receivedMessage );
 
                 String[] args = receivedMessage.split(":");
 
@@ -53,16 +57,18 @@ public class ProcessUDPListener implements Runnable {
                             );
                         }
 
-                        else if( this.serverInstance.amIAtCriticalRegion())
+                        else if( this.serverInstance.amIAtCriticalRegion() )
                         {
                             this.serverInstance.getReqList().add(Map.of(
-                                    receivePacket.getAddress(),
+                                    "ProcessPort",
                                     receivePacket.getPort()
                             ));
                         }
 
-                        else if( this.serverInstance.doIWantToEnterCriticalRegion())
+                        else if( this.serverInstance.doIWantToEnterCriticalRegion() )
                         {
+                            System.out.println("TS" + args[1]);
+
                             if(this.serverInstance.getTimer().getTimestamp() > Long.parseLong(args[1]))
                             {
                                 this.serverInstance.respondUdp(
@@ -73,12 +79,19 @@ public class ProcessUDPListener implements Runnable {
                             else
                             {
                                 this.serverInstance.getReqList().add(Map.of(
-                                        receivePacket.getAddress(),
+                                        "ProcessPort",
                                         receivePacket.getPort()
                                 ));
                             }
                         }
 
+                        break;
+                    case "UPDATE":
+
+                        ArrayList<Map<String,String>> data = this.parseUpdateData(args[1]);
+                        break;
+                    default:
+                        System.out.println("DEFAULT : " + args[0]);
                         break;
                 }
             }
@@ -102,6 +115,23 @@ public class ProcessUDPListener implements Runnable {
         }
 
         return -1;
+    }
+
+    private ArrayList<Map<String,String>> parseUpdateData(String received)
+    {
+        String list = received.substring(1,received.length() -1);
+        String[] pairs = list.split(",");
+
+        ArrayList<Map<String,String>> data = new ArrayList<>();
+
+        for(String pair : pairs)
+        {
+            String value = ((pair.substring(1,pair.length()-1)).split("="))[1];
+
+            data.add(Map.of("message",value));
+        }
+
+        return data;
     }
 
 

@@ -2,9 +2,12 @@ package Http.Commands;
 
 import Database.SqliteConnection;
 import Http.Server;
+import Util.RicartAgrawala.Core.Process;
+import Util.UDP.UDPClient;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -12,13 +15,9 @@ public class MessageCommand extends BaseCommand {
 
     private ArrayList<Map<String,String>> parameters;
 
-    private Server serverInstance;
-
-
     public MessageCommand(String processNumber, Server server)
     {
-        super(processNumber);
-        this.serverInstance = server;
+        super(processNumber, server);
     }
 
     @Override
@@ -27,37 +26,64 @@ public class MessageCommand extends BaseCommand {
 
         if( httpExchange.getRequestMethod().equals("POST"))
         {
+            System.out.println("MessageCommand: I've received a message to store in database");
+
             this.serverInstance.setiWantToEnterCriticalRegion(true);
 
             parameters = this.parsePostRequest((Map<String, Object>)httpExchange.getAttribute("parameters"),httpExchange.getRequestBody());
 
-            boolean insertRespose = this.insert(parameters);
+            Process mutualExclusionHandler = new Process(
+                    this.processNumber,
+                    this.serverInstance
+            );
 
-            System.out.println("Insert deu certo ? " + Boolean.toString(insertRespose));
+
+            while (! mutualExclusionHandler.proceed() )
+            {
+                System.out.println("Waiting for OK Responses");
+            }
+
+            System.out.println("It's okay to proceed");
+
+            boolean insertResponse = this.insert(parameters);
+
+            this.serverInstance.setImAtCriticalRegion(true);
+
+            // Update
+            System.out.println("Update below");
+            this.update(parameters);
+
+            this.notifyNodes(
+                    "OK:" + this.processNumber,
+                    this.serverInstance.getReqList()
+            );
+
+            this.serverInstance.resetReqList();
+
+            this.serverInstance.setiWantToEnterCriticalRegion(false);
+            this.serverInstance.setImAtCriticalRegion(false);
+
+            this.respond(
+                    200,
+                    (insertResponse) ? "Inserido com sucesso" : "Erro ao inserir",
+                    httpExchange
+            );
         }
     }
 
+    private boolean insert(ArrayList<Map<String,String>> data) {
 
-    protected boolean insert(ArrayList<Map<String,String>> data) {
-
-
+        this.serverInstance.setImAtCriticalRegion(true);
 
         SqliteConnection dbAdapter = new SqliteConnection(this.processNumber);
 
-        String[] values = new String[data.size()];
+        String[] values = this.insertFy(data);
 
-        int i = 0;
+        boolean success =  dbAdapter.insert("Messages",values);
 
-        for(Map<String,String> param : data)
-        {
-            Map.Entry<String,String> entry = param.entrySet().iterator().next();
+        this.serverInstance.setImAtCriticalRegion(false);
 
-            values[i] = entry.getValue();
-
-            i++;
-        }
-
-        return dbAdapter.insert("Messages",values);
+        return success;
     }
 
 

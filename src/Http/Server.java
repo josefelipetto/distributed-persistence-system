@@ -3,13 +3,11 @@ package Http;
 import Http.Commands.MessageCommand;
 import Util.Timer;
 import Util.UDP.ProcessUDPListener;
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
@@ -25,7 +23,7 @@ public class Server implements Runnable {
 
     private boolean imAtCriticalRegion = false;
 
-    private Queue<Map<InetAddress,Integer>> reqList;
+    private Queue<Map<String,Integer>> reqList;
 
     private int[] processesPorts;
 
@@ -36,22 +34,11 @@ public class Server implements Runnable {
 
         this.processNumber = processNumber;
 
+        this.processesPorts = this.getProcesses();
+
         this.timer = new Timer();
 
         reqList = new LinkedList<>();
-
-        if(this.processNumber.equals("1"))
-        {
-            processesPorts = new int[]{9877,9878};
-        }
-        else if(this.processNumber.equals("2"))
-        {
-            processesPorts = new int[]{9876,9878};
-        }
-        else
-        {
-            processesPorts = new int[]{9876,9877};
-        }
 
         Thread udpListener = new Thread(new ProcessUDPListener(this.processNumber, this));
 
@@ -74,6 +61,9 @@ public class Server implements Runnable {
 
             httpServer.setExecutor(null);
             httpServer.start();
+
+            System.out.println("Process " + this.processNumber + " initiated");
+
         }
         catch (IOException | NullPointerException e)
         {
@@ -83,31 +73,13 @@ public class Server implements Runnable {
 
     }
 
-    public static void respond(int httpCode, String response, HttpExchange httpExchange){
-
-        try
-        {
-            httpExchange.sendResponseHeaders(httpCode,response.length());
-            OutputStream outputStream = httpExchange.getResponseBody();
-            outputStream.write(response.getBytes());
-            outputStream.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-    }
-
     public void respondUdp(DatagramPacket receivePacket, String sentence)
     {
         try
         {
             DatagramSocket clientSocket = new DatagramSocket();
 
-            byte[] sendData = new byte[1024];
-
-            sendData = sentence.getBytes();
+            byte[] sendData = sentence.getBytes();
 
             clientSocket.send(
                     new DatagramPacket(
@@ -126,30 +98,41 @@ public class Server implements Runnable {
     }
 
     public boolean doIWantToEnterCriticalRegion() {
+
         return iWantToEnterCriticalRegion;
     }
 
     public void setiWantToEnterCriticalRegion(boolean iWantToEnterCriticalRegion) {
+
         this.iWantToEnterCriticalRegion = iWantToEnterCriticalRegion;
     }
 
     public boolean amIAtCriticalRegion() {
+
         return imAtCriticalRegion;
     }
 
     public void setImAtCriticalRegion(boolean imAtCriticalRegion) {
+
         this.imAtCriticalRegion = imAtCriticalRegion;
     }
 
-    public Queue<Map<InetAddress,Integer>> getReqList() {
+    public Queue<Map<String,Integer>> getReqList() {
+
         return reqList;
     }
 
+    public void resetReqList() {
+        this.reqList = new LinkedList<>();
+    }
+
     public int[] getProcessesPorts() {
+
         return processesPorts;
     }
 
     public Timer getTimer() {
+
         return timer;
     }
 
@@ -173,7 +156,25 @@ public class Server implements Runnable {
     }
 
     private String getProcessNumber(){
+
         return this.processNumber;
+    }
+
+    private int[] getProcesses() {
+
+        if(this.processNumber.equals("1"))
+        {
+            return new int[]{9877,9878};
+        }
+        else if(this.processNumber.equals("2"))
+        {
+            return new int[]{9876,9878};
+        }
+        else
+        {
+            return new int[]{9876,9877};
+        }
+
     }
 
 
