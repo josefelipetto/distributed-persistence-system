@@ -16,6 +16,7 @@ public class Handler {
         delay(1);
         Thread p3HttpHandler = new Thread(new Server("3"));
         p3HttpHandler.start();
+
     }
 
     private static void delay(long seconds){

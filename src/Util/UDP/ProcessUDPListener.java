@@ -1,5 +1,6 @@
 package Util.UDP;
 
+import Database.SqliteConnection;
 import Http.Server;
 
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 
 public class ProcessUDPListener implements Runnable {
@@ -22,6 +24,12 @@ public class ProcessUDPListener implements Runnable {
         this.processNumber = processNumber;
         this.receivedData = new byte[1024];
         this.serverInstance = server;
+
+        System.out.println("//////////////////////////////////");
+        System.out.println("Process " + this.processNumber + " status ");
+        System.out.println("Intent : " + this.serverInstance.doIWantToEnterCriticalRegion() );
+        System.out.println("ImIn   : " + this.serverInstance.amIAtCriticalRegion());
+        System.out.println("//////////////////////////////////");
 
     }
 
@@ -40,7 +48,6 @@ public class ProcessUDPListener implements Runnable {
 
                 String receivedMessage = new String(receivePacket.getData(),0,receivePacket.getLength());
 
-
                 System.out.println("UDP Listener of process " + this.processNumber + " received a message : " + receivedMessage );
 
                 String[] args = receivedMessage.split(":");
@@ -48,9 +55,15 @@ public class ProcessUDPListener implements Runnable {
                 switch (args[0])
                 {
                     case "REQUEST":
+                        System.out.println("================================================");
+                        System.out.println("Process " + this.processNumber + " status ");
+                        System.out.println("Intent : " + this.serverInstance.doIWantToEnterCriticalRegion() );
+                        System.out.println("ImIn   : " + this.serverInstance.amIAtCriticalRegion());
+                        System.out.println("================================================");
 
                         if(! this.serverInstance.doIWantToEnterCriticalRegion() && ! this.serverInstance.amIAtCriticalRegion())
                         {
+
                             this.serverInstance.respondUdp(
                                     receivePacket,
                                     "OK:" + this.processNumber
@@ -67,7 +80,6 @@ public class ProcessUDPListener implements Runnable {
 
                         else if( this.serverInstance.doIWantToEnterCriticalRegion() )
                         {
-                            System.out.println("TS" + args[1]);
 
                             if(this.serverInstance.getTimer().getTimestamp() > Long.parseLong(args[1]))
                             {
@@ -89,10 +101,20 @@ public class ProcessUDPListener implements Runnable {
                     case "UPDATE":
 
                         ArrayList<Map<String,String>> data = this.parseUpdateData(args[1]);
+
+                        SqliteConnection sqliteConnection = new SqliteConnection(this.processNumber);
+
+                        boolean response = sqliteConnection.insert("Messages",this.insertFy(data));
+
+                        System.out.println("Update P" + this.processNumber + " : " + Boolean.toString(response));
+
+                        this.serverInstance.respondUdp(receivePacket,"RESULT:" + Boolean.toString(response));
+
                         break;
                     default:
                         System.out.println("DEFAULT : " + args[0]);
                         break;
+
                 }
             }
         }
@@ -120,18 +142,32 @@ public class ProcessUDPListener implements Runnable {
     private ArrayList<Map<String,String>> parseUpdateData(String received)
     {
         String list = received.substring(1,received.length() -1);
-        String[] pairs = list.split(",");
 
         ArrayList<Map<String,String>> data = new ArrayList<>();
 
-        for(String pair : pairs)
-        {
-            String value = ((pair.substring(1,pair.length()-1)).split("="))[1];
+        String value = ((list.substring(1,list.length()-1)).split("="))[1];
 
-            data.add(Map.of("message",value));
-        }
+        data.add(Map.of("message",value));
 
         return data;
+    }
+
+    private String[] insertFy(ArrayList<Map<String,String>> data )
+    {
+        int i = 0;
+
+        String[] values = new String[data.size()];
+
+        for(Map<String,String> param : data)
+        {
+            Map.Entry<String,String> entry = param.entrySet().iterator().next();
+
+            values[i] = entry.getValue();
+
+            i++;
+        }
+
+        return values;
     }
 
 

@@ -73,7 +73,7 @@ abstract public class BaseCommand implements HttpHandler {
 
     }
 
-    protected static Map<String,String> queryToMap(String query){
+    protected Map<String,String> queryToMap(String query){
 
         Map<String,String> result = new HashMap<>();
 
@@ -107,6 +107,7 @@ abstract public class BaseCommand implements HttpHandler {
         System.out.println(" ================================================================");
     }
 
+
     protected void respond(int httpCode, String response, HttpExchange httpExchange){
 
         try
@@ -131,6 +132,7 @@ abstract public class BaseCommand implements HttpHandler {
 
     }
 
+
     protected void notifyNodes(String message, Queue<Map<String,Integer>> reqList){
         UDPClient udpClient = new UDPClient();
 
@@ -141,16 +143,46 @@ abstract public class BaseCommand implements HttpHandler {
 
     }
 
-    protected void update(ArrayList<Map<String,String>> data){
+    protected boolean update(ArrayList<Map<String,String>> data){
 
         String message = "UPDATE:" + data.toString();
 
         UDPClient udpClient = new UDPClient();
 
+        udpClient.setTimeout(2000);
+
+        int responsesNumber = 0;
+
         for( int port : this.serverInstance.getProcessesPorts())
         {
+
             udpClient.send(message,port);
+
+            String response = udpClient.receive();
+
+            if(response == null)
+            {
+                return false;
+            }
+
+            String[] args = response.split(":");
+
+            if(args[0].equals("RESULT"))
+            {
+                if( Boolean.parseBoolean(args[1]) )
+                {
+                    responsesNumber++;
+                }
+            }
+            else
+            {
+                System.out.println("Sei la o que deu mano");
+                return false;
+            }
+
         }
+
+        return responsesNumber >= 2;
     }
 
     protected String[] insertFy(ArrayList<Map<String,String>> data )

@@ -3,18 +3,13 @@ package Util.RicartAgrawala.Core;
 import Http.Server;
 import Util.UDP.UDPClient;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.Queue;
-
 public class Process {
 
     private String processNumber;
 
     private Server server;
 
+    private boolean timeOut = false;
 
     public Process(String processNumber, Server server){
 
@@ -28,6 +23,8 @@ public class Process {
 
         UDPClient udpClient = new UDPClient();
 
+        udpClient.setTimeout(8000);
+
         int numberOfResponses = 0;
 
         for (int processPort : this.server.getProcessesPorts())
@@ -39,6 +36,14 @@ public class Process {
 
             String response = udpClient.receive();
 
+            if(response == null)
+            {
+                this.setTimeOut(true);
+                return true;
+            }
+
+            System.out.println("RESSSP ->  "+response);
+
             String[] args = response.split(":");
 
             if(args[0].equals("OK") && ! args[1].equals(this.processNumber))
@@ -49,9 +54,18 @@ public class Process {
 
         if(numberOfResponses >= 2)
         {
+            System.out.println("Pode ir fera");
             canProceed = true;
         }
 
         return canProceed;
+    }
+
+    public void setTimeOut(boolean timeOut) {
+        this.timeOut = timeOut;
+    }
+
+    public boolean isTimeOut() {
+        return timeOut;
     }
 }

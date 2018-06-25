@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 
 public class UDPClient {
 
@@ -23,7 +24,6 @@ public class UDPClient {
         {
             e.printStackTrace();
         }
-
 
     }
 
@@ -67,6 +67,18 @@ public class UDPClient {
         return response;
 
 
+    }
+
+    public void setTimeout(int timeout)
+    {
+        try
+        {
+            this.clientSocket.setSoTimeout(timeout);
+        }
+        catch (SocketException e)
+        {
+            e.printStackTrace();
+        }
     }
 
 

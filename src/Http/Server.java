@@ -6,12 +6,8 @@ import Util.UDP.ProcessUDPListener;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.net.*;
+import java.util.*;
 
 public class Server implements Runnable {
 
@@ -27,20 +23,21 @@ public class Server implements Runnable {
 
     private int[] processesPorts;
 
-
     public static MessageCommand messageCommand;
 
     public Server(String processNumber){
 
         this.processNumber = processNumber;
 
-        this.processesPorts = this.getProcesses();
+        this.processesPorts = this.getUdpProcessesPorts();
 
         this.timer = new Timer();
 
         reqList = new LinkedList<>();
 
-        Thread udpListener = new Thread(new ProcessUDPListener(this.processNumber, this));
+        Thread udpListener = new Thread(
+                new ProcessUDPListener(this.processNumber, this)
+        );
 
         udpListener.start();
 
@@ -70,7 +67,6 @@ public class Server implements Runnable {
             e.printStackTrace();
         }
 
-
     }
 
     public void respondUdp(DatagramPacket receivePacket, String sentence)
@@ -99,7 +95,7 @@ public class Server implements Runnable {
 
     public boolean doIWantToEnterCriticalRegion() {
 
-        return iWantToEnterCriticalRegion;
+        return this.iWantToEnterCriticalRegion;
     }
 
     public void setiWantToEnterCriticalRegion(boolean iWantToEnterCriticalRegion) {
@@ -109,7 +105,7 @@ public class Server implements Runnable {
 
     public boolean amIAtCriticalRegion() {
 
-        return imAtCriticalRegion;
+        return this.imAtCriticalRegion;
     }
 
     public void setImAtCriticalRegion(boolean imAtCriticalRegion) {
@@ -119,7 +115,7 @@ public class Server implements Runnable {
 
     public Queue<Map<String,Integer>> getReqList() {
 
-        return reqList;
+        return this.reqList;
     }
 
     public void resetReqList() {
@@ -128,12 +124,12 @@ public class Server implements Runnable {
 
     public int[] getProcessesPorts() {
 
-        return processesPorts;
+        return this.processesPorts;
     }
 
     public Timer getTimer() {
 
-        return timer;
+        return this.timer;
     }
 
     private int getProcessPort(){
@@ -160,21 +156,9 @@ public class Server implements Runnable {
         return this.processNumber;
     }
 
-    private int[] getProcesses() {
-
-        if(this.processNumber.equals("1"))
-        {
-            return new int[]{9877,9878};
-        }
-        else if(this.processNumber.equals("2"))
-        {
-            return new int[]{9876,9878};
-        }
-        else
-        {
-            return new int[]{9876,9877};
-        }
-
+    private int[] getUdpProcessesPorts()
+    {
+        return this.processNumber.equals("1") ? new int[]{9877,9878} : this.processNumber.equals("2") ? new int[]{9876, 9878} : new int[]{9876,9877};
     }
 
 

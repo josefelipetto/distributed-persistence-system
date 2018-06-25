@@ -1,5 +1,7 @@
 package Database;
 
+import org.sqlite.SQLiteException;
+
 import java.sql.*;
 
 public class DatabaseConnection implements Connectable {
@@ -36,7 +38,16 @@ public class DatabaseConnection implements Connectable {
         try
         {
             this.statement = this.connection.createStatement();
-            this.statement.executeUpdate(this.generateInsertStatement(table,values));
+
+            String st = this.generateInsertStatement(table,values);
+
+            if(st == null)
+            {
+                return false;
+            }
+
+            this.statement.executeUpdate(st);
+
             this.statement.close();
 
             this.connection.commit();
@@ -45,7 +56,8 @@ public class DatabaseConnection implements Connectable {
         }
         catch (SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("AA");
+//            e.printStackTrace();
             return false;
         }
 
@@ -75,6 +87,11 @@ public class DatabaseConnection implements Connectable {
 
         ResultSet resultSet = this.select("SELECT MAX(" + identifier + ") AS maxId FROM " + table);
 
+        if(resultSet == null)
+        {
+            return -1;
+        }
+
         try
         {
             return resultSet.getInt("maxId");
@@ -98,6 +115,11 @@ public class DatabaseConnection implements Connectable {
         String query = "INSERT INTO " + table + " VALUES";
 
         int higherIdentifier = this.max(table,"ID") + 1;
+
+        if(higherIdentifier == -1)
+        {
+            return null;
+        }
 
         int size = values.length;
 
