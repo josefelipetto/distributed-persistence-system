@@ -5,15 +5,12 @@ import Util.UDP.UDPClient;
 
 public class Process {
 
-    private String processNumber;
-
     private Server server;
 
     private boolean timeOut = false;
 
-    public Process(String processNumber, Server server){
+    public Process(Server server){
 
-        this.processNumber = processNumber;
         this.server = server;
     }
 
@@ -22,8 +19,6 @@ public class Process {
         boolean canProceed = false;
 
         UDPClient udpClient = new UDPClient();
-
-        udpClient.setTimeout(8000);
 
         int numberOfResponses = 0;
 
@@ -36,17 +31,11 @@ public class Process {
 
             String response = udpClient.receive();
 
-            if(response == null)
-            {
-                this.setTimeOut(true);
-                return true;
-            }
-
             System.out.println("RESSSP ->  "+response);
 
             String[] args = response.split(":");
 
-            if(args[0].equals("OK") && ! args[1].equals(this.processNumber))
+            if(args[0].equals("OK") && ! args[1].equals(Integer.toString(this.server.getProcessNumber())))
             {
                 numberOfResponses++;
             }

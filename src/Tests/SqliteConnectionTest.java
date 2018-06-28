@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SqliteConnectionTest {
 
-    private static String processNumber = "1";
+    private static int processNumber = 1;
 
     @Test
     public void testConstructor(){

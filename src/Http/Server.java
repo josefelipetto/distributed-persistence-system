@@ -2,16 +2,19 @@ package Http;
 
 import Http.Commands.MessageCommand;
 import Util.Timer;
+import Util.UDP.GroupListener;
 import Util.UDP.ProcessUDPListener;
+import Util.UDP.UDPClient;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Server implements Runnable {
 
-    private String processNumber;
+    private int processNumber;
 
     private Timer timer;
 
@@ -19,42 +22,48 @@ public class Server implements Runnable {
 
     private boolean imAtCriticalRegion = false;
 
-    private Queue<Map<String,Integer>> reqList;
+    private Queue<Map<String,Integer>> reqList = new LinkedList<>();
 
-    private int[] processesPorts;
+    private List<Integer> processesPorts = new ArrayList<>();
 
-    public static MessageCommand messageCommand;
+    private UDPClient udpClient = new UDPClient();
 
-    public Server(String processNumber){
+    private int clientsReady = 1;
+
+    public Server(int processNumber){
 
         this.processNumber = processNumber;
 
-        this.processesPorts = this.getUdpProcessesPorts();
-
         this.timer = new Timer();
 
-        reqList = new LinkedList<>();
+        Thread udpListener = new Thread( new ProcessUDPListener( this) );
 
-        Thread udpListener = new Thread(
-                new ProcessUDPListener(this.processNumber, this)
-        );
+        Thread groupListener = new Thread( new GroupListener(this) );
 
         udpListener.start();
+
+        groupListener.start();
+
+        this.timer.start();
 
     }
 
     @Override
     public void run() {
 
+        while (this.clientsReady < 2)
+        {
+            this.udpClient.broadcast("START:" + Integer.toString( this.getProcessNumber() ) + "," + this.udpPort());
+            System.out.println("Process " + this.processNumber + " not ready yet");
+        }
+
         HttpServer httpServer;
 
         try
         {
-            httpServer = HttpServer.create(new InetSocketAddress(this.getProcessPort()),0);
+            httpServer = HttpServer.create(new InetSocketAddress(this.getHttpPort()),0);
 
-            messageCommand = new MessageCommand(this.getProcessNumber(),this);
-
-            httpServer.createContext("/message", messageCommand);
+            httpServer.createContext("/message", new MessageCommand(this));
 
             httpServer.setExecutor(null);
             httpServer.start();
@@ -63,30 +72,6 @@ public class Server implements Runnable {
 
         }
         catch (IOException | NullPointerException e)
-        {
-            e.printStackTrace();
-        }
-
-    }
-
-    public void respondUdp(DatagramPacket receivePacket, String sentence)
-    {
-        try
-        {
-            DatagramSocket clientSocket = new DatagramSocket();
-
-            byte[] sendData = sentence.getBytes();
-
-            clientSocket.send(
-                    new DatagramPacket(
-                            sendData,
-                            sendData.length,
-                            receivePacket.getAddress(),
-                            receivePacket.getPort()
-                    )
-            );
-        }
-        catch (IOException e)
         {
             e.printStackTrace();
         }
@@ -122,7 +107,7 @@ public class Server implements Runnable {
         this.reqList = new LinkedList<>();
     }
 
-    public int[] getProcessesPorts() {
+    public List<Integer> getProcessesPorts() {
 
         return this.processesPorts;
     }
@@ -132,15 +117,15 @@ public class Server implements Runnable {
         return this.timer;
     }
 
-    private int getProcessPort(){
+    private int getHttpPort(){
 
         switch (this.processNumber)
         {
-            case "1":
+            case 1:
                 return 8000;
-            case "2":
+            case 2:
                 return 8001;
-            case "3":
+            case 3:
                 return 8002;
             default:
                 System.out.println("Erro ao definir a porta");
@@ -151,15 +136,50 @@ public class Server implements Runnable {
 
     }
 
-    private String getProcessNumber(){
+    public int getProcessNumber(){
 
         return this.processNumber;
     }
 
-    private int[] getUdpProcessesPorts()
-    {
-        return this.processNumber.equals("1") ? new int[]{9877,9878} : this.processNumber.equals("2") ? new int[]{9876, 9878} : new int[]{9876,9877};
+    private void delay(long seconds){
+
+        try
+        {
+            TimeUnit.SECONDS.sleep(seconds);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 
+    private int udpPort(){
+        return this.processNumber == 1 ? 9876 : this.processNumber == 2 ? 9877 : 9878;
+    }
 
+    public void addClientsReady() {
+        this.clientsReady++;
+    }
+
+    public boolean checkForOtherNodes(){
+
+        UDPClient udp = new UDPClient();
+
+        udp.setTimeout(5000);
+
+        for(int port : this.getProcessesPorts())
+        {
+            udp.send("PING", port);
+
+            String response = udp.receive();
+
+            if(response == null)
+            {
+                return false;
+            }
+
+        }
+
+        return true;
+    }
 }

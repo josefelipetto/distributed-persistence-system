@@ -4,33 +4,21 @@ import Database.SqliteConnection;
 import Http.Server;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.net.*;
+import java.util.*;
 
-
-public class ProcessUDPListener implements Runnable {
+public class ProcessUDPListener extends Listenable implements Runnable {
 
     private byte[] receivedData;
 
-    private String processNumber;
+    private UDPClient udpClient = new UDPClient();
 
-    private Server serverInstance;
 
-    public ProcessUDPListener(String processNumber, Server server){
+    public ProcessUDPListener(Server server){
 
-        this.processNumber = processNumber;
+        super(server);
+
         this.receivedData = new byte[1024];
-        this.serverInstance = server;
-
-        System.out.println("//////////////////////////////////");
-        System.out.println("Process " + this.processNumber + " status ");
-        System.out.println("Intent : " + this.serverInstance.doIWantToEnterCriticalRegion() );
-        System.out.println("ImIn   : " + this.serverInstance.amIAtCriticalRegion());
-        System.out.println("//////////////////////////////////");
-
     }
 
     @Override
@@ -38,6 +26,7 @@ public class ProcessUDPListener implements Runnable {
         try
         {
             DatagramSocket serverSocket = new DatagramSocket(this.getUDPPort());
+
 
             while (true)
             {
@@ -48,25 +37,37 @@ public class ProcessUDPListener implements Runnable {
 
                 String receivedMessage = new String(receivePacket.getData(),0,receivePacket.getLength());
 
-                System.out.println("UDP Listener of process " + this.processNumber + " received a message : " + receivedMessage );
+                System.out.println("UDP Listener of process " + this.serverInstance.getProcessNumber() + " received a message : " + receivedMessage );
 
-                String[] args = receivedMessage.split(":");
+                String command = receivedMessage;
+                String value = null;
 
-                switch (args[0])
+                if( receivedMessage.contains(":"))
+                {
+                    String[] args = receivedMessage.split(":");
+
+                    command = args[0];
+
+                    value = args[1];
+                }
+
+                if( ! command.equals(receivedMessage) && value == null)
+                {
+                    System.out.println("Wrong message");
+
+                    continue;
+                }
+
+                switch (command)
                 {
                     case "REQUEST":
-                        System.out.println("================================================");
-                        System.out.println("Process " + this.processNumber + " status ");
-                        System.out.println("Intent : " + this.serverInstance.doIWantToEnterCriticalRegion() );
-                        System.out.println("ImIn   : " + this.serverInstance.amIAtCriticalRegion());
-                        System.out.println("================================================");
 
                         if(! this.serverInstance.doIWantToEnterCriticalRegion() && ! this.serverInstance.amIAtCriticalRegion())
                         {
 
-                            this.serverInstance.respondUdp(
-                                    receivePacket,
-                                    "OK:" + this.processNumber
+                            this.udpClient.send(
+                                    "OK:" + Integer.toString(this.serverInstance.getProcessNumber()),
+                                    receivePacket.getPort()
                             );
                         }
 
@@ -81,11 +82,11 @@ public class ProcessUDPListener implements Runnable {
                         else if( this.serverInstance.doIWantToEnterCriticalRegion() )
                         {
 
-                            if(this.serverInstance.getTimer().getTimestamp() > Long.parseLong(args[1]))
+                            if(this.serverInstance.getTimer().getTimestamp() > Long.parseLong(value))
                             {
-                                this.serverInstance.respondUdp(
-                                        receivePacket,
-                                        "OK:" + this.processNumber
+                                this.udpClient.send(
+                                        "OK:" + Integer.toString(this.serverInstance.getProcessNumber()),
+                                        receivePacket.getPort()
                                 );
                             }
                             else
@@ -100,19 +101,28 @@ public class ProcessUDPListener implements Runnable {
                         break;
                     case "UPDATE":
 
-                        ArrayList<Map<String,String>> data = this.parseUpdateData(args[1]);
+                        ArrayList<Map<String,String>> data = this.parseUpdateData(value);
 
-                        SqliteConnection sqliteConnection = new SqliteConnection(this.processNumber);
+                        SqliteConnection sqliteConnection = new SqliteConnection(this.serverInstance.getProcessNumber());
 
                         boolean response = sqliteConnection.insert("Messages",this.insertFy(data));
 
-                        System.out.println("Update P" + this.processNumber + " : " + Boolean.toString(response));
-
-                        this.serverInstance.respondUdp(receivePacket,"RESULT:" + Boolean.toString(response));
+                        this.udpClient.send(
+                                "RESULT:" + Boolean.toString(response),
+                                receivePacket.getPort()
+                        );
 
                         break;
+                    case "PING":
+
+                        this.udpClient.send(
+                                "LIVE:" + Integer.toString(this.serverInstance.getProcessNumber()),
+                                receivePacket.getPort()
+                        );
+                        break;
+
                     default:
-                        System.out.println("DEFAULT : " + args[0]);
+                        System.out.println("DEFAULT : " + command);
                         break;
 
                 }
@@ -122,21 +132,6 @@ public class ProcessUDPListener implements Runnable {
         {
             e.printStackTrace();
         }
-    }
-
-    private int getUDPPort()
-    {
-        switch (this.processNumber)
-        {
-            case "1":
-                return 9876;
-            case "2":
-                return 9877;
-            case "3":
-                return 9878;
-        }
-
-        return -1;
     }
 
     private ArrayList<Map<String,String>> parseUpdateData(String received)

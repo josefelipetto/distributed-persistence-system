@@ -1,16 +1,17 @@
 package Util.UDP;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 
 public class UDPClient {
 
     private DatagramSocket clientSocket;
 
     private InetAddress IPAddress;
+
+    private int groupPort = 42280;
+
+    private InetAddress groupAddress;
 
     public UDPClient()
     {
@@ -19,6 +20,7 @@ public class UDPClient {
         {
             this.clientSocket = new DatagramSocket();
             this.IPAddress = InetAddress.getByName("localhost");
+            this.groupAddress = InetAddress.getByName("224.0.0.1");
         }
         catch (IOException e)
         {
@@ -67,6 +69,32 @@ public class UDPClient {
         return response;
 
 
+    }
+
+    public void broadcast(String message)
+    {
+        try
+        {
+            MulticastSocket socket = new MulticastSocket(this.groupPort);
+
+            socket.joinGroup(this.groupAddress);
+
+            socket.send(
+                    new DatagramPacket(
+                            message.getBytes(),
+                            message.length(),
+                            this.groupAddress,
+                            this.groupPort
+                    )
+            );
+
+            socket.leaveGroup(this.groupAddress);
+
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public void setTimeout(int timeout)

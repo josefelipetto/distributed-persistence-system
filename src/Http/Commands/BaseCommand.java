@@ -15,13 +15,10 @@ import java.util.regex.Pattern;
 
 abstract public class BaseCommand implements HttpHandler {
 
-    protected String processNumber;
-
     protected Server serverInstance;
 
-    public BaseCommand(String processNumber, Server serverInstance)
+    public BaseCommand(Server serverInstance)
     {
-        this.processNumber = processNumber;
         this.serverInstance = serverInstance;
     }
 
@@ -96,7 +93,7 @@ abstract public class BaseCommand implements HttpHandler {
 
     protected void showRequest(ArrayList<Map<String,String>> parameters){
 
-        System.out.println(" ================== P" + this.processNumber + " =================");
+        System.out.println(" ================== P" + this.serverInstance.getProcessNumber() + " =================");
 
         for(Map<String,String> param : parameters)
         {

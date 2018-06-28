@@ -16,54 +16,43 @@ public class MessageCommand extends BaseCommand {
 
     private ArrayList<Map<String,String>> parameters;
 
-    public MessageCommand(String processNumber, Server server)
+    public MessageCommand(Server server)
     {
-        super(processNumber, server);
+        super(server);
     }
 
-    private  Process mutualExclusionHandler = new Process(
-            this.processNumber,
-            this.serverInstance
-    );
+    private  Process mutualExclusionHandler = new Process( this.serverInstance );
 
     @Override
     @SuppressWarnings("unchecked")
     public void handle(HttpExchange httpExchange) throws IOException {
 
-        System.out.println(httpExchange.getRequestMethod());
-
         if( httpExchange.getRequestMethod().equals("POST"))
         {
-            System.out.println("MessageCommand of " + this.processNumber + ": I've received a message to store in database");
 
             parameters = this.parsePostRequest((Map<String, Object>)httpExchange.getAttribute("parameters"),httpExchange.getRequestBody());
 
-            this.serverInstance.setiWantToEnterCriticalRegion(true);
-
-            while (! this.mutualExclusionHandler.proceed() )
+            if ( ! this.serverInstance.checkForOtherNodes() )
             {
-                System.out.println("Blocked for new inserts");
-            }
 
-            if(this.mutualExclusionHandler.isTimeOut())
-            {
+                System.out.println("One of the processes is offline ");
+
                 this.respond(
-                        200,
+                        500,
                         "Timeout em um dos processos",
                         httpExchange
                 );
             }
             else
             {
+                this.serverInstance.setiWantToEnterCriticalRegion(true);
+
+                while (! this.mutualExclusionHandler.proceed() )
+                {
+                    System.out.println("Blocked for new inserts");
+                }
+
                 this.serverInstance.setImAtCriticalRegion(true);
-
-                System.out.println("¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨");
-                System.out.println("Process " + this.processNumber + " status ");
-                System.out.println("Intent : " + this.serverInstance.doIWantToEnterCriticalRegion() );
-                System.out.println("ImIn   : " + this.serverInstance.amIAtCriticalRegion());
-                System.out.println("¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨");
-
-                System.out.println("MAASSSSS : " + Boolean.toString(this.serverInstance.amIAtCriticalRegion()));
 
                 boolean worked = false;
 
@@ -82,27 +71,25 @@ public class MessageCommand extends BaseCommand {
 
 
                 this.notifyNodes(
-                        "OK:" + this.processNumber,
+                        "OK:" + Integer.toString(this.serverInstance.getProcessNumber()),
                         this.serverInstance.getReqList()
                 );
-
-                System.out.println("Vai sair");
 
                 this.serverInstance.resetReqList();
 
                 this.serverInstance.setImAtCriticalRegion(false);
+
+                this.serverInstance.setiWantToEnterCriticalRegion(false);
             }
 
-            this.serverInstance.setiWantToEnterCriticalRegion(false);
         }
         else if(httpExchange.getRequestMethod().equals("GET"))
         {
             Map<String,String> query = this.queryToMap(httpExchange.getRequestURI().getQuery());
 
-            String key = query.entrySet().iterator().next().getKey();
             String value = query.entrySet().iterator().next().getValue();
 
-            SqliteConnection dbAdapter = new SqliteConnection(this.processNumber);
+            SqliteConnection dbAdapter = new SqliteConnection(this.serverInstance.getProcessNumber());
 
             ResultSet resultSet = dbAdapter.select("SELECT * FROM Messages WHERE id = " + value);
 
@@ -128,7 +115,7 @@ public class MessageCommand extends BaseCommand {
 
         this.serverInstance.setImAtCriticalRegion(true);
 
-        SqliteConnection dbAdapter = new SqliteConnection(this.processNumber);
+        SqliteConnection dbAdapter = new SqliteConnection(this.serverInstance.getProcessNumber());
 
         String[] values = this.insertFy(data);
 
@@ -141,8 +128,6 @@ public class MessageCommand extends BaseCommand {
 
     private boolean replicate(){
 
-        // Update
-        System.out.println("Process " + this.processNumber + " fired an update request ");
 
         long randomDelay = 1L + (long) (Math.random() * 4L);
 
@@ -159,13 +144,13 @@ public class MessageCommand extends BaseCommand {
         try
         {
             TimeUnit.SECONDS.sleep(seconds);
-            System.out.println("Delay acabou");
         }
         catch (InterruptedException e)
         {
             e.printStackTrace();
         }
     }
+
 
 
 

@@ -6,15 +6,12 @@ public class Handler {
 
     public static void main(String[] args){
 
-        Thread p1HttpHandler = new Thread(new Server("1"));
+        Thread p1HttpHandler = new Thread( new Server(1) );
+        Thread p2HttpHandler = new Thread( new Server(2) );
+        Thread p3HttpHandler = new Thread( new Server(3) );
+
         p1HttpHandler.start();
-
-        delay(1);
-        Thread p2HttpHandler = new Thread(new Server("2"));
         p2HttpHandler.start();
-
-        delay(1);
-        Thread p3HttpHandler = new Thread(new Server("3"));
         p3HttpHandler.start();
 
     }
@@ -30,6 +27,5 @@ public class Handler {
             e.printStackTrace();
         }
     }
-
 
 }

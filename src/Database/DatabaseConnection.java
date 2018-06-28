@@ -8,11 +8,11 @@ public class DatabaseConnection implements Connectable {
 
     protected Connection connection = null;
 
-    protected String currentProcess;
+    protected int currentProcess;
 
     protected Statement statement = null;
 
-    public DatabaseConnection(String currentProcess, String driver) {
+    public DatabaseConnection(int currentProcess, String driver) {
 
         try
         {
@@ -106,7 +106,7 @@ public class DatabaseConnection implements Connectable {
 
     private String getConnectionString(){
 
-        return ( ("jdbc:sqlite:src/DBFiles/DB").concat(currentProcess) ).concat(".db");
+        return ( ("jdbc:sqlite:src/DBFiles/DB").concat(Integer.toString(currentProcess)) ).concat(".db");
 
     }
 

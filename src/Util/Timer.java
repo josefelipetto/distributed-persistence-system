@@ -2,9 +2,11 @@ package Util;
 
 public class Timer{
 
-    private long timestamp = 0;
+    private long timestamp;
 
-    public Timer(){
+    public void start(){
+
+        this.timestamp = 1L + (long) (Math.random() * 3L);
 
         Thread timeUp = new Thread(new TimeUp(this));
 
