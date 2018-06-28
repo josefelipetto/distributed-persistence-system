@@ -1,6 +1,7 @@
 package Http;
 
 import Http.Commands.MessageCommand;
+import Util.Config.BasicConfig;
 import Util.Timer;
 import Util.UDP.GroupListener;
 import Util.UDP.ProcessUDPListener;
@@ -51,7 +52,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
 
-        while (this.clientsReady < 2)
+        while (this.clientsReady < BasicConfig.NUMBER_OF_NODES)
         {
             this.udpClient.broadcast("START:" + Integer.toString( this.getProcessNumber() ) + "," + this.udpPort());
             System.out.println("Process " + this.processNumber + " not ready yet");
@@ -167,6 +168,8 @@ public class Server implements Runnable {
 
         udp.setTimeout(5000);
 
+        int responseNumber = 0;
+
         for(int port : this.getProcessesPorts())
         {
             udp.send("PING", port);
@@ -178,8 +181,10 @@ public class Server implements Runnable {
                 return false;
             }
 
+            responseNumber++;
         }
 
-        return true;
+
+        return responseNumber >= BasicConfig.NUMBER_OF_NODES - 1;
     }
 }
