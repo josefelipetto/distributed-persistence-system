@@ -1,5 +1,7 @@
 package Http;
 
+import Tests.InsertServiceTest;
+
 import java.util.concurrent.TimeUnit;
 
 public class Handler {
@@ -13,6 +15,16 @@ public class Handler {
         p1HttpHandler.start();
         p2HttpHandler.start();
         p3HttpHandler.start();
+
+        delay(2);
+
+        Thread p1InsertTest = new Thread( new InsertServiceTest(1));
+        Thread p2InsertTest = new Thread( new InsertServiceTest(2));
+        Thread p3InsertTest = new Thread( new InsertServiceTest(3));
+
+        p1InsertTest.start();
+        p2InsertTest.start();
+        p3InsertTest.start();
 
     }
 

@@ -37,7 +37,7 @@ public class ProcessUDPListener extends Listenable implements Runnable {
 
                 String receivedMessage = new String(receivePacket.getData(),0,receivePacket.getLength());
 
-                System.out.println("UDP Listener of process " + this.serverInstance.getProcessNumber() + " received a message : " + receivedMessage );
+//                System.out.println("UDP Listener of process " + this.serverInstance.getProcessNumber() + " received a message : " + receivedMessage );
 
                 String command = receivedMessage;
                 String value = null;

@@ -1,6 +1,7 @@
 package Util.RicartAgrawala.Core;
 
 import Http.Server;
+import Util.Config.BasicConfig;
 import Util.UDP.UDPClient;
 
 public class Process {
@@ -31,8 +32,6 @@ public class Process {
 
             String response = udpClient.receive();
 
-            System.out.println("RESSSP ->  "+response);
-
             String[] args = response.split(":");
 
             if(args[0].equals("OK") && ! args[1].equals(Integer.toString(this.server.getProcessNumber())))
@@ -41,9 +40,8 @@ public class Process {
             }
         }
 
-        if(numberOfResponses >= 2)
+        if(numberOfResponses >= BasicConfig.NUMBER_OF_NODES - 1)
         {
-            System.out.println("Pode ir fera");
             canProceed = true;
         }
 

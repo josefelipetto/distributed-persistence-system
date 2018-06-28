@@ -2,6 +2,7 @@ package Http.Commands;
 
 import Database.SqliteConnection;
 import Http.Server;
+import Util.Config.BasicConfig;
 import Util.RicartAgrawala.Core.Process;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -38,7 +39,7 @@ public class MessageCommand extends BaseCommand {
                 System.out.println("One of the processes is offline ");
 
                 this.respond(
-                        500,
+                        BasicConfig.SERVER_ERROR,
                         "Timeout em um dos processos",
                         httpExchange
                 );
@@ -64,7 +65,7 @@ public class MessageCommand extends BaseCommand {
                 }
 
                 this.respond(
-                        200,
+                        BasicConfig.OK,
                         (worked) ? "Inserido com sucesso" : "Erro ao inserir",
                         httpExchange
                 );
@@ -103,8 +104,9 @@ public class MessageCommand extends BaseCommand {
             {
 //                e.printStackTrace();
             }
+
             this.respond(
-                    200,
+                    BasicConfig.OK,
                     response,
                     httpExchange
             );
@@ -131,7 +133,7 @@ public class MessageCommand extends BaseCommand {
 
         long randomDelay = 1L + (long) (Math.random() * 4L);
 
-        randomDelay = 5L; // TESTE
+//        randomDelay = 5L; // TESTE
 
         this.delay(randomDelay);
 

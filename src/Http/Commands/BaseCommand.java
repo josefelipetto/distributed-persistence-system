@@ -32,13 +32,24 @@ abstract public class BaseCommand implements HttpHandler {
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
 
         String line;
+
         boolean needsToClose = false;
+
         String paramName = null;
 
         while ( (line = bufferedReader.readLine()) != null)
         {
             if( line.contains("WebKitFormBoundary") || line.isEmpty())
             {
+                continue;
+            }
+
+            if(line.contains("message"))
+            {
+                String[] pair = line.split("=");
+
+                parsed.add(Map.of(pair[0],pair[1]));
+
                 continue;
             }
 
@@ -56,6 +67,7 @@ abstract public class BaseCommand implements HttpHandler {
             Pattern wordToFind = Pattern.compile("[a-zA-Z]*=\"[a-zA-Z]*\"");
 
             Matcher matcher = wordToFind.matcher(line);
+
 
             if (matcher.find())
             {

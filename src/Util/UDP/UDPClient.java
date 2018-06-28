@@ -105,7 +105,7 @@ public class UDPClient {
         }
         catch (SocketException e)
         {
-            e.printStackTrace();
+            System.out.println(" Communication Timeout ");
         }
     }
 

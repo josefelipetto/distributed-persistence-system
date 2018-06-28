@@ -23,7 +23,6 @@ public class DatabaseConnection implements Connectable {
             this.connection = DriverManager.getConnection(this.getConnectionString());
             this.connection.setAutoCommit(false);
 
-            System.out.println("Conexão aberta com sucesso");
         }
         catch (SQLException | ClassNotFoundException e)
         {
@@ -56,8 +55,6 @@ public class DatabaseConnection implements Connectable {
         }
         catch (SQLException e)
         {
-            System.out.println("AA");
-//            e.printStackTrace();
             return false;
         }
 
