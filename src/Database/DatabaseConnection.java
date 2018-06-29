@@ -13,7 +13,7 @@ public class DatabaseConnection implements Connectable {
     protected Statement statement = null;
 
     public DatabaseConnection(int currentProcess, String driver) {
-
+        
         try
         {
             this.currentProcess = currentProcess;

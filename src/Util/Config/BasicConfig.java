@@ -9,4 +9,7 @@ public class BasicConfig {
     public static final int SERVER_ERROR = 500;
 
     public static final int NOT_FOUND = 400;
+
+    public static final boolean DEBUG = true;
+
 }

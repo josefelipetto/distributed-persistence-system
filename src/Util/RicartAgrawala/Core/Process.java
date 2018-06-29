@@ -1,7 +1,6 @@
 package Util.RicartAgrawala.Core;
 
 import Http.Server;
-import Util.Config.BasicConfig;
 import Util.UDP.UDPClient;
 
 public class Process {
@@ -17,11 +16,7 @@ public class Process {
 
     public boolean proceed()
     {
-        boolean canProceed = false;
-
         UDPClient udpClient = new UDPClient();
-
-        int numberOfResponses = 0;
 
         for (int processPort : this.server.getProcessesPorts())
         {
@@ -32,20 +27,20 @@ public class Process {
 
             String response = udpClient.receive();
 
+            if( response == null )
+            {
+                return false;
+            }
+
             String[] args = response.split(":");
 
-            if(args[0].equals("OK") && ! args[1].equals(Integer.toString(this.server.getProcessNumber())))
+            if(! args[0].equals("OK") && ! args[1].equals(Integer.toString(this.server.getProcessNumber())))
             {
-                numberOfResponses++;
+                return false;
             }
         }
 
-        if(numberOfResponses >= BasicConfig.NUMBER_OF_NODES - 1)
-        {
-            canProceed = true;
-        }
-
-        return canProceed;
+        return true;
     }
 
     public void setTimeOut(boolean timeOut) {

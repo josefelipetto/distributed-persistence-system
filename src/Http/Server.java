@@ -35,7 +35,7 @@ public class Server implements Runnable {
 
         this.processNumber = processNumber;
 
-        this.timer = new Timer();
+        this.timer = new Timer(this);
 
         Thread udpListener = new Thread( new ProcessUDPListener( this) );
 
@@ -52,10 +52,11 @@ public class Server implements Runnable {
     @Override
     public void run() {
 
-        while (this.clientsReady < BasicConfig.NUMBER_OF_NODES)
+        long start = System.currentTimeMillis();
+
+        while ( System.currentTimeMillis() <= start + 10000L)
         {
-            this.udpClient.broadcast("START:" + Integer.toString( this.getProcessNumber() ) + "," + this.udpPort());
-            System.out.println("Process " + this.processNumber + " not ready yet");
+            this.udpClient.broadcast("START:" + Integer.toString( this.getProcessNumber() ) + "," + this.udpPort() );
         }
 
         HttpServer httpServer;

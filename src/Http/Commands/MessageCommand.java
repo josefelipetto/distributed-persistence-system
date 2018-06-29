@@ -43,6 +43,7 @@ public class MessageCommand extends BaseCommand {
                         "Timeout em um dos processos",
                         httpExchange
                 );
+
             }
             else
             {
@@ -76,6 +77,8 @@ public class MessageCommand extends BaseCommand {
                         this.serverInstance.getReqList()
                 );
 
+                System.out.println("Inserido com sucesso");
+
                 this.serverInstance.resetReqList();
 
                 this.serverInstance.setImAtCriticalRegion(false);
@@ -92,21 +95,28 @@ public class MessageCommand extends BaseCommand {
 
             SqliteConnection dbAdapter = new SqliteConnection(this.serverInstance.getProcessNumber());
 
-            ResultSet resultSet = dbAdapter.select("SELECT * FROM Messages WHERE id = " + value);
-
             String response = "No record";
 
-            try
+            long start = System.currentTimeMillis();
+
+            while (response.equals("No record") && (System.currentTimeMillis() <= start + 3000L))
             {
-                response = resultSet.getString("MESSAGE");
-            }
-            catch (SQLException e)
-            {
-//                e.printStackTrace();
+                ResultSet resultSet = dbAdapter.select("SELECT * FROM Messages WHERE id = " + value);
+
+                try
+                {
+                    response = resultSet.getString("MESSAGE");
+                }
+                catch (SQLException e)
+                {
+//                    System.out.println("Não achou. Tentando de novo...");
+                }
             }
 
+            System.out.println(response);
+
             this.respond(
-                    BasicConfig.OK,
+                    response.equals("No record") ? BasicConfig.NOT_FOUND : BasicConfig.OK,
                     response,
                     httpExchange
             );
@@ -130,12 +140,14 @@ public class MessageCommand extends BaseCommand {
 
     private boolean replicate(){
 
+        // Fake delay injection to simulate real world applications and it's delivery issues
 
-        long randomDelay = 1L + (long) (Math.random() * 4L);
+        if(BasicConfig.DEBUG)
+        {
+            long randomDelay = 1L + (long) (Math.random() * 4L);
 
-//        randomDelay = 5L; // TESTE
-
-        this.delay(randomDelay);
+            this.delay(randomDelay);
+        }
 
         return this.update(parameters);
 

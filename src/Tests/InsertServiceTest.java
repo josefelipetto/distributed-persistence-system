@@ -18,13 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class InsertServiceTest implements Runnable{
+public class InsertServiceTest extends Testable implements Runnable{
 
-    private int processNumber;
+    public InsertServiceTest(int processNumber){
 
-    public InsertServiceTest(int processNumber)
-    {
-        this.processNumber = processNumber;
+        super(processNumber);
     }
 
     @Override
@@ -88,11 +86,6 @@ public class InsertServiceTest implements Runnable{
 
     }
 
-
-    private String getHttpPort(){
-
-        return this.processNumber == 1 ? "8000" : this.processNumber == 2 ? "8001" : "8002";
-    }
 
     private String random(){
 

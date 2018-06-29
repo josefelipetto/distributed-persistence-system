@@ -39,19 +39,30 @@ abstract public class BaseCommand implements HttpHandler {
 
         while ( (line = bufferedReader.readLine()) != null)
         {
+
             if( line.contains("WebKitFormBoundary") || line.isEmpty())
             {
                 continue;
             }
 
-            if(line.contains("message"))
-            {
-                String[] pair = line.split("=");
-
-                parsed.add(Map.of(pair[0],pair[1]));
-
-                continue;
-            }
+//            if(line.contains("message"))
+//            {
+//
+//                if(line.contains("{") && line.contains("}"))
+//                {
+//                    line = line.substring(1,line.length()-1);
+//                    line = line.replace("\"","");
+//                    line = line.replace(":","=");
+//                }
+//
+//                String[] pair = line.split("=");
+//
+//                parsed.add(Map.of(pair[0],pair[1]));
+//
+//                continue;
+//
+//
+//            }
 
             if(needsToClose)
             {
@@ -160,8 +171,6 @@ abstract public class BaseCommand implements HttpHandler {
 
         udpClient.setTimeout(2000);
 
-        int responsesNumber = 0;
-
         for( int port : this.serverInstance.getProcessesPorts())
         {
 
@@ -176,22 +185,15 @@ abstract public class BaseCommand implements HttpHandler {
 
             String[] args = response.split(":");
 
-            if(args[0].equals("RESULT"))
-            {
-                if( Boolean.parseBoolean(args[1]) )
-                {
-                    responsesNumber++;
-                }
-            }
-            else
+            if(! args[0].equals("RESULT"))
             {
                 System.out.println("Sei la o que deu mano");
                 return false;
             }
-
         }
 
-        return responsesNumber >= 2;
+
+        return true;
     }
 
     protected String[] insertFy(ArrayList<Map<String,String>> data )

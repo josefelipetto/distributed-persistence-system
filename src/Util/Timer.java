@@ -1,16 +1,30 @@
 package Util;
 
+import Http.Server;
+
 public class Timer{
 
     private long timestamp;
 
+    private Server server;
+
+    public Timer(Server server)
+    {
+        this.server = server;
+    }
+
     public void start(){
 
-        this.timestamp = 1L + (long) (Math.random() * 3L);
+        this.timestamp = this.randomStart();
 
         Thread timeUp = new Thread(new TimeUp(this));
 
         timeUp.start();
+    }
+
+    private long randomStart(){
+
+        return (long) this.server.getProcessNumber() - 1;
     }
 
     public long getTimestamp() {
